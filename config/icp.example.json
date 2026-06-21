@@ -1,0 +1,31 @@
+{
+  "name": "Norske utleiebedrifter",
+  "description": "Bedrifter som driver utleie og kan ha nytte av rentoutbase.com. Juster NACE-koder, sted og størrelse til din faktiske målgruppe.",
+  "sources": {
+    "brreg": {
+      "_kommentar": "NACE-koder for utleievirksomhet. 77.x = utleie/leasing, 68.209 = utleie av egen fast eiendom.",
+      "naeringskoder": [
+        "77.110",
+        "77.120",
+        "77.210",
+        "77.290",
+        "77.310",
+        "77.320",
+        "77.330",
+        "77.390",
+        "68.209"
+      ],
+      "kommunenummer": [],
+      "_kommentar_ansatte": "Brønnøysund tillater ikke filter i intervallet 1–4 ansatte (personvern). Bruk 0 eller >= 5.",
+      "fraAntallAnsatte": 5,
+      "tilAntallAnsatte": 200,
+      "organisasjonsformer": ["AS", "ENK", "ANS", "DA"],
+      "maxPerNaeringskode": 200
+    }
+  },
+  "scoring": {
+    "minEmployees": 5,
+    "requireWebsite": true,
+    "_kommentar": "Bedrifter som ikke oppfyller kravene lagres, men flagges ikke som 'qualified'."
+  }
+}

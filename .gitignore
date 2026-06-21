@@ -1,0 +1,12 @@
+node_modules/
+dist/
+*.log
+.DS_Store
+
+# Hemmeligheter
+.env
+.env.local
+
+# Persondata om prospekter skal IKKE inn i git (GDPR).
+# Den lokale databasen ligger her:
+data/

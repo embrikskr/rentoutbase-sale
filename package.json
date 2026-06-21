@@ -1,0 +1,19 @@
+{
+  "name": "rentoutbase-sale",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Automatisk B2B-kundeanskaffelse for rentoutbase.com — lead-sourcing, outreach, møtebooking og salgsforberedelse.",
+  "scripts": {
+    "cli": "tsx src/cli.ts",
+    "ingest": "tsx src/cli.ts ingest",
+    "list": "tsx src/cli.ts list",
+    "stats": "tsx src/cli.ts stats",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  }
+}
