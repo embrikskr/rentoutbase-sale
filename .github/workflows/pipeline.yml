@@ -61,7 +61,10 @@ jobs:
           SEND_WINDOW_START: ${{ vars.SEND_WINDOW_START || '8' }}
           SEND_WINDOW_END: ${{ vars.SEND_WINDOW_END || '15' }}
         run: |
-          if [ "${{ inputs.live }}" = "true" ]; then
+          # Sender ekte hvis du startet manuelt med "live", ELLER hvis du har
+          # satt repository-variabelen SEND_LIVE=true (for autopilot på timeplan).
+          # Ellers tørrkjøring (trygt som standard).
+          if [ "${{ inputs.live }}" = "true" ] || [ "${{ vars.SEND_LIVE }}" = "true" ]; then
             npm start -- --live
           else
             npm start
