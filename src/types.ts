@@ -12,10 +12,14 @@ export interface Company {
   naceDescription?: string;
   employees?: number;
   website?: string;
+  /** E-post oppgitt direkte av kilden (f.eks. OpenStreetMap), om tilgjengelig. */
+  email?: string;
   municipality?: string;
   municipalityCode?: string;
   postalCode?: string;
   postalCity?: string;
+  /** Landkode (ISO 3166-1), f.eks. "DE". */
+  country?: string;
   /** Hvor bedriften ble funnet, f.eks. "brreg". */
   source: string;
   /** ISO-tidspunkt for når den ble hentet inn. */

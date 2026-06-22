@@ -62,23 +62,35 @@ export async function enrich(store: Store, limit = 50): Promise<EnrichResult> {
 
   for (const lead of leads) {
     const company = await store.getCompany(lead.companyId);
-    if (!company?.website) {
+    if (!company) {
       result.skipped++;
       continue;
     }
     result.processed++;
 
-    const domain = domainFromUrl(company.website);
-    if (!domain) {
-      result.skipped++;
-      continue;
+    let email: string | undefined;
+    let status: Contact["emailStatus"] = "verified";
+    let foundVia = "kilde";
+
+    if (company.email) {
+      // Kilden (f.eks. OSM) ga e-post direkte – ingen skraping nødvendig.
+      email = company.email;
+    } else if (company.website) {
+      const domain = domainFromUrl(company.website);
+      if (domain) {
+        email = await findEmailOnSite(company.website, domain);
+        foundVia = "nettside";
+        if (!email) {
+          email = guessRoleEmail(domain);
+          status = "guessed";
+          foundVia = "gjettet";
+        }
+      }
     }
 
-    let email = await findEmailOnSite(company.website, domain);
-    let status: Contact["emailStatus"] = "verified";
     if (!email) {
-      email = guessRoleEmail(domain);
-      status = "guessed";
+      result.skipped++;
+      continue;
     }
 
     if (await store.isSuppressed(email)) {
@@ -89,14 +101,14 @@ export async function enrich(store: Store, limit = 50): Promise<EnrichResult> {
 
     const note = isRoleAddress(email)
       ? undefined
-      : "Kun personlig adresse funnet – vær varsom (markedsføringsloven §15).";
+      : "Kun personlig adresse funnet – vær varsom (ePrivacy/GDPR).";
 
     const contact: Contact = {
       id: randomUUID(),
       companyId: company.id,
       email,
       emailStatus: status,
-      source: status === "verified" ? "nettside" : "gjettet",
+      source: foundVia,
     };
     await store.upsertContact(contact);
 

@@ -38,7 +38,8 @@ export async function draft(store: Store, limit = 100): Promise<DraftResult> {
     }
 
     const msg = renderMessage(company, contact, pitch, env);
-    const file = join(outDir, `${company.id}.txt`);
+    const safeId = company.id.replace(/[^a-z0-9._-]/gi, "_");
+    const file = join(outDir, `${safeId}.txt`);
     writeFileSync(
       file,
       `Til:      ${msg.to}\nFra:      ${msg.fromName} <${msg.fromEmail}>\nEmne:     ${msg.subject}\n\n${msg.body}\n`,

@@ -36,7 +36,7 @@ function fill(template: string, vars: Record<string, string>): string {
 
 /**
  * Bygger en personalisert melding for én lead, med lovpålagt avmelding og
- * fysisk firmaadresse i bunnteksten (markedsføringsloven / e-handelsloven).
+ * fysisk firmaadresse i bunnteksten (markedsføringsregler / GDPR).
  */
 export function renderMessage(
   company: Company,

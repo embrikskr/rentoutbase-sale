@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import type { IcpConfig } from "../config.js";
-import { sourceFromBrreg } from "../sources/brreg.js";
+import { sourceCompanies } from "../sources/index.js";
 import type { Store } from "../store/store.js";
 import type { Company, Lead, LeadStage } from "../types.js";
 
@@ -10,19 +10,20 @@ export interface IngestResult {
   qualified: number;
 }
 
-/** Enkel ICP-scoring: gir poeng for nettside og nok ansatte. */
+/** Enkel ICP-scoring: gir poeng for kontaktinfo og nok ansatte. */
 function score(company: Company, icp: IcpConfig): { score: number; qualified: boolean } {
   let s = 50;
-  const reqWebsite = icp.scoring.requireWebsite ?? false;
+  const reqContact = icp.scoring.requireWebsite ?? false;
   const minEmp = icp.scoring.minEmployees ?? 0;
 
-  const hasWebsite = Boolean(company.website);
-  const enoughEmployees = (company.employees ?? 0) >= minEmp;
+  const contactable = Boolean(company.website || company.email);
+  // Ansatt-tall finnes ikke i alle kilder (f.eks. OSM); da gjelder ikke kravet.
+  const enoughEmployees = minEmp === 0 || (company.employees ?? 0) >= minEmp;
 
-  if (hasWebsite) s += 25;
-  if (enoughEmployees) s += 25;
+  if (contactable) s += 25;
+  if (company.employees != null && company.employees >= minEmp) s += 25;
 
-  const qualified = (!reqWebsite || hasWebsite) && enoughEmployees;
+  const qualified = (!reqContact || contactable) && enoughEmployees;
   return { score: s, qualified };
 }
 
@@ -33,7 +34,7 @@ function score(company: Company, icp: IcpConfig): { score: number; qualified: bo
 export async function ingest(store: Store, icp: IcpConfig): Promise<IngestResult> {
   const result: IngestResult = { fetched: 0, added: 0, qualified: 0 };
 
-  for await (const company of sourceFromBrreg(icp.sources.brreg)) {
+  for await (const company of sourceCompanies(icp.sources)) {
     result.fetched++;
     const isNew = await store.upsertCompany(company);
 

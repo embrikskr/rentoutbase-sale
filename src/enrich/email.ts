@@ -1,6 +1,6 @@
 // Gratis e-post-funn uten API-nøkler: trekk ut adresser fra HTML og gjett
 // rolleadresser ut fra domenet. Vi foretrekker rolleadresser (post@, kontakt@)
-// framfor personlige, av hensyn til markedsføringsloven §15.
+// framfor personlige, av hensyn til ePrivacy/GDPR.
 
 const ROLE_PREFIXES = [
   "post",

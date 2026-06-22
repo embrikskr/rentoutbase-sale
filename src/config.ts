@@ -14,12 +14,22 @@ export interface BrregSourceConfig {
   maxPerNaeringskode: number;
 }
 
+export interface OsmSourceConfig {
+  /** ISO 3166-1-landkoder, f.eks. ["DE","FR","NL"]. */
+  areas: string[];
+  /** OSM-taggene som regnes som relevante bedrifter, f.eks. "amenity=car_rental". */
+  selectors: string[];
+  maxPerArea: number;
+}
+
 export interface IcpConfig {
   name: string;
   description?: string;
-  sources: { brreg: BrregSourceConfig };
+  // Minst én kilde må være satt. Brreg er kun for Norge.
+  sources: { osm?: OsmSourceConfig; brreg?: BrregSourceConfig };
   scoring: {
     minEmployees?: number;
+    /** Krev kontaktinfo (nettside eller e-post) for å regnes som kvalifisert. */
     requireWebsite?: boolean;
   };
 }

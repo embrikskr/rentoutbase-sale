@@ -5,13 +5,14 @@ potensielle kunder, kvalifiserer dem, tar kontakt via e-post, booker møter og
 gjør alt klart for et salg.
 
 > ⚠️ **Les avsnittet om regelverk før du sender en eneste e-post.** Kald
-> e-post i Norge er regulert av markedsføringsloven og GDPR.
+> B2B-e-post i EU/EØS er regulert av GDPR og ePrivacy-direktivet (ulik
+> implementering per land).
 
 ## Pipeline
 
 ```
-1. SOURCE    Finn bedrifter (Brønnøysund åpne API: bransje/NACE, sted, størrelse)   ✅
-2. ENRICH    Finn kontakt-e-post (skrap nettside + gjett rolleadresse)                ✅
+1. SOURCE    Finn bedrifter (OpenStreetMap/Overpass: kategori + land i Europa)       ✅
+2. ENRICH    Finn kontakt-e-post (e-post fra kilde, ellers skrap nettside)            ✅
 3. DRAFT     Lag personaliserte e-poster m/ lovpålagt avmelding + firmaadresse        ✅
 4. ENGAGE    Send via SMTP, sendetak, suppression, aldri dobbelt                       ✅
 5. CONVERT   Les svar (IMAP) → klassifiser → STOPP/booking → oppdater CRM            ✅
@@ -31,9 +32,9 @@ npm install
 cp .env.example .env        # fyll ut når du kommer til Fase 4 (e-post)
 
 # Juster målgruppen din:
-cp config/icp.example.json config/icp.json   # rediger NACE-koder, sted, størrelse
+cp config/icp.example.json config/icp.json   # rediger land (areas) og kategorier
 
-npm run ingest              # henter bedrifter fra Brønnøysund
+npm run ingest              # henter bedrifter fra OpenStreetMap (Europa)
 npm run stats               # antall leads per steg
 npm run list -- --stage qualified --limit 25
 ```
@@ -71,13 +72,20 @@ kjøringer via cache, så samme bedrift kontaktes ikke på nytt.
 
 ## Konfigurasjon (`config/icp.json`)
 
-Definerer hvem maskinen skal lete etter (Ideal Customer Profile):
+Definerer hvem maskinen skal lete etter (Ideal Customer Profile). Standard er
+OpenStreetMap-kilden (`sources.osm`):
 
-- `naeringskoder` — NACE-koder. `77.x` = utleie/leasing, `68.209` = utleie av
-  egen fast eiendom. Finn flere på [SSBs NACE-oversikt](https://www.ssb.no/klass/klassifikasjoner/6).
-- `kommunenummer` — begrens til bestemte kommuner (tom = hele landet).
-- `fra/tilAntallAnsatte`, `organisasjonsformer` — størrelses- og selskapsfilter.
-- `scoring` — krav for at en lead skal regnes som `qualified`.
+- `areas` — ISO 3166-1-landkoder, f.eks. `["GB","FR","DE",…]`. Legg til/fjern
+  land etter behov.
+- `selectors` — OSM-tagger for relevante bedrifter, f.eks. `amenity=car_rental`,
+  `amenity=boat_rental`, `amenity=bicycle_rental`, `shop=rental`. Se
+  [OSM-wiki](https://wiki.openstreetmap.org/wiki/Map_features) for flere.
+- `maxPerArea` — maks antall bedrifter per land per kjøring.
+- `scoring.requireWebsite` — krev kontaktinfo (nettside eller e-post) for at en
+  lead skal regnes som `qualified`.
+
+> Brønnøysund-kilden (`sources.brreg`) finnes fortsatt i koden for norske
+> bedrifter, men er ikke i standardoppsettet.
 
 ## Datamodell
 
@@ -87,9 +95,11 @@ i produksjon uten å endre forretningslogikken.
 
 ## Regelverk (må følges)
 
-- **Markedsføringsloven § 15** forbyr uoppfordret e-postmarkedsføring til
-  *fysiske personer* uten samtykke. Hold deg til bedrifts-/rolleadresser
-  (`post@`, `kontakt@`) framfor personlige adresser.
+- **ePrivacy-direktivet** (implementert ulikt per EU/EØS-land) regulerer
+  uoppfordret e-postmarkedsføring. Til *fysiske personer* kreves som regel
+  samtykke; til bedrifts-/rolleadresser (`post@`, `info@`) står man friere i
+  mange land. Hold deg til rolleadresser, og sjekk reglene i landene du
+  retter deg mot.
 - **GDPR**: prospekt-e-poster er persondata. Lovlig grunnlag er normalt
   berettiget interesse (art. 6(1)(f)) — krever interesseavveining, personvern-
   info og enkel reservasjonsrett. Hver lead skal kunne slettes på forespørsel.

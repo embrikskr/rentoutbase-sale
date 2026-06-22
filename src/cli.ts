@@ -20,7 +20,9 @@ async function cmdIngest(): Promise<void> {
   const icp = loadIcp();
   const store = new JsonStore();
   console.log(`Henter inn leads for ICP: "${icp.name}"`);
-  console.log(`Næringskoder: ${icp.sources.brreg.naeringskoder.join(", ")}\n`);
+  if (icp.sources.osm) console.log(`Land: ${icp.sources.osm.areas.join(", ")}`);
+  if (icp.sources.brreg) console.log(`Næringskoder: ${icp.sources.brreg.naeringskoder.join(", ")}`);
+  console.log();
 
   const res = await ingest(store, icp);
   console.log(`\nFerdig.`);
@@ -200,7 +202,7 @@ async function main(): Promise<void> {
 Bruk:
   npm start                       Kjør HELE rutinen (ingest→enrich→draft→send, tørr)
   npm start -- --live             Kjør hele rutinen og send på ekte
-  npm run ingest                  Hent inn leads fra Brønnøysund (steg 1–3)
+  npm run ingest                  Hent inn leads fra kilden (OSM/Europa) (steg 1–3)
   npm run enrich -- --limit 50    Finn kontakt-e-post for kvalifiserte leads (steg 2)
   npm run draft                   Lag personaliserte e-postutkast (steg 3 → data/outbox/)
   npm run send                    Tørrkjøring av utsending (viser hva som ville sendt)
