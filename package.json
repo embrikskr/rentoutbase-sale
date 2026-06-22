@@ -7,6 +7,7 @@
   "scripts": {
     "cli": "tsx src/cli.ts",
     "ingest": "tsx src/cli.ts ingest",
+    "enrich": "tsx src/cli.ts enrich",
     "list": "tsx src/cli.ts list",
     "stats": "tsx src/cli.ts stats",
     "typecheck": "tsc --noEmit"

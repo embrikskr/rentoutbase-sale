@@ -1,4 +1,5 @@
 import { loadIcp } from "./config.js";
+import { enrich } from "./pipeline/enrich.js";
 import { ingest } from "./pipeline/ingest.js";
 import { JsonStore } from "./store/jsonStore.js";
 import type { LeadStage } from "./types.js";
@@ -21,6 +22,18 @@ async function cmdIngest(): Promise<void> {
   console.log(`  Kvalifiserte:     ${res.qualified}`);
 }
 
+async function cmdEnrich(): Promise<void> {
+  const store = new JsonStore();
+  const limit = Number(arg("limit") ?? 50);
+  console.log(`Beriker inntil ${limit} kvalifiserte leads (finner kontakt-e-post)…\n`);
+  const res = await enrich(store, limit);
+  console.log(`Ferdig.`);
+  console.log(`  Behandlet:          ${res.processed}`);
+  console.log(`  E-post fra nettside: ${res.found}`);
+  console.log(`  Gjettet rolleadresse: ${res.guessed}`);
+  console.log(`  Hoppet over:         ${res.skipped}`);
+}
+
 async function cmdList(): Promise<void> {
   const store = new JsonStore();
   const stage = arg("stage") as LeadStage | undefined;
@@ -32,9 +45,10 @@ async function cmdList(): Promise<void> {
     const c = await store.getCompany(lead.companyId);
     if (!c) continue;
     const emp = c.employees != null ? `${c.employees} ans.` : "ukjent ant.";
-    const web = c.website ?? "—";
+    const contacts = await store.listContacts(lead.companyId);
+    const email = contacts[0]?.email ?? c.website ?? "—";
     console.log(
-      `  [${lead.stage}] ${c.name} (${c.id}) · ${emp} · ${c.postalCity ?? ""} · ${web}`,
+      `  [${lead.stage}] ${c.name} (${c.id}) · ${emp} · ${c.postalCity ?? ""} · ${email}`,
     );
   }
   if (leads.length > limit) console.log(`\n  … og ${leads.length - limit} til (bruk --limit).`);
@@ -58,6 +72,9 @@ async function main(): Promise<void> {
     case "ingest":
       await cmdIngest();
       break;
+    case "enrich":
+      await cmdEnrich();
+      break;
     case "list":
       await cmdList();
       break;
@@ -69,7 +86,8 @@ async function main(): Promise<void> {
 
 Bruk:
   npm run ingest                  Hent inn leads fra Brønnøysund (steg 1–3)
-  npm run list -- --stage qualified --limit 25
+  npm run enrich -- --limit 50    Finn kontakt-e-post for kvalifiserte leads (steg 2)
+  npm run list -- --stage enriched --limit 25
   npm run stats                   Antall leads per steg
 `);
   }
