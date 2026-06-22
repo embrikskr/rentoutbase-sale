@@ -2,12 +2,17 @@ import { loadIcp } from "./config.js";
 import { draft } from "./pipeline/draft.js";
 import { enrich } from "./pipeline/enrich.js";
 import { ingest } from "./pipeline/ingest.js";
+import { send } from "./pipeline/send.js";
 import { JsonStore } from "./store/jsonStore.js";
 import type { LeadStage } from "./types.js";
 
 function arg(name: string): string | undefined {
   const i = process.argv.indexOf(`--${name}`);
   return i >= 0 ? process.argv[i + 1] : undefined;
+}
+
+function hasFlag(name: string): boolean {
+  return process.argv.includes(`--${name}`);
 }
 
 async function cmdIngest(): Promise<void> {
@@ -44,6 +49,33 @@ async function cmdDraft(): Promise<void> {
   console.log(`  Utkast laget: ${res.drafted}`);
   console.log(`  Hoppet over:  ${res.skipped}`);
   console.log(`  Mappe:        ${res.outDir}`);
+}
+
+async function cmdSend(): Promise<void> {
+  const store = new JsonStore();
+  const live = hasFlag("live");
+  if (!live) {
+    console.log("TØRRKJØRING (ingenting sendes). Legg til --live for å sende på ekte.\n");
+  } else {
+    console.log("⚠️  LIVE-SENDING aktivert.\n");
+  }
+  const res = await send(store, { live });
+  console.log(`\nFerdig.`);
+  console.log(`  ${live ? "Sendt" : "Ville sendt"}: ${res.sent}`);
+  console.log(`  Hoppet over:  ${res.skipped}`);
+  if (res.capReached) console.log(`  (Daglig tak nådd – kjør igjen senere.)`);
+}
+
+async function cmdSuppress(): Promise<void> {
+  const store = new JsonStore();
+  const value = process.argv[3];
+  if (!value) {
+    console.error("Bruk: npm run cli -- suppress <e-post-eller-domene> [grunn]");
+    process.exit(1);
+  }
+  const reason = process.argv.slice(4).join(" ") || "manuelt lagt til";
+  await store.suppress(value, reason);
+  console.log(`La til ${value} på suppression-lista (${reason}). Kontaktes aldri igjen.`);
 }
 
 async function cmdList(): Promise<void> {
@@ -90,6 +122,12 @@ async function main(): Promise<void> {
     case "draft":
       await cmdDraft();
       break;
+    case "send":
+      await cmdSend();
+      break;
+    case "suppress":
+      await cmdSuppress();
+      break;
     case "list":
       await cmdList();
       break;
@@ -103,6 +141,9 @@ Bruk:
   npm run ingest                  Hent inn leads fra Brønnøysund (steg 1–3)
   npm run enrich -- --limit 50    Finn kontakt-e-post for kvalifiserte leads (steg 2)
   npm run draft                   Lag personaliserte e-postutkast (steg 3 → data/outbox/)
+  npm run send                    Tørrkjøring av utsending (viser hva som ville sendt)
+  npm run send -- --live          Send på ekte (krever SMTP i .env)
+  npm run cli -- suppress <e-post> [grunn]   Legg til på reservasjonsliste
   npm run list -- --stage enriched --limit 25
   npm run stats                   Antall leads per steg
 `);

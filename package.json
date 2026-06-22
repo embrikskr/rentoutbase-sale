@@ -9,6 +9,7 @@
     "ingest": "tsx src/cli.ts ingest",
     "enrich": "tsx src/cli.ts enrich",
     "draft": "tsx src/cli.ts draft",
+    "send": "tsx src/cli.ts send",
     "list": "tsx src/cli.ts list",
     "stats": "tsx src/cli.ts stats",
     "typecheck": "tsc --noEmit"
@@ -17,5 +18,9 @@
     "@types/node": "^22.10.2",
     "tsx": "^4.19.2",
     "typescript": "^5.7.2"
+  },
+  "dependencies": {
+    "@types/nodemailer": "^8.0.1",
+    "nodemailer": "^9.0.1"
   }
 }
