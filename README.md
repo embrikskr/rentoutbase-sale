@@ -14,7 +14,7 @@ gjør alt klart for et salg.
 2. ENRICH    Finn kontakt-e-post (skrap nettside + gjett rolleadresse)                ✅
 3. DRAFT     Lag personaliserte e-poster m/ lovpålagt avmelding + firmaadresse        ✅
 4. ENGAGE    Send via SMTP, sendetak, suppression, aldri dobbelt                       ✅
-5. CONVERT   Oppdag svar (IMAP) → klassifiser m/ AI → send bookinglenke → CRM         ⏳
+5. CONVERT   Les svar (IMAP) → klassifiser → STOPP/booking → oppdater CRM            ✅
 ```
 
 Hele rutinen i én kommando:
@@ -104,11 +104,21 @@ i produksjon uten å endre forretningslogikken.
 - Sett opp **SPF, DKIM og DMARC** på sende-domenet.
 - Varm opp domenet, og hold deg under `DAILY_SEND_LIMIT`.
 
+## Svarhåndtering (Fase 5)
+
+`npm run replies` leser innboksen via IMAP, klassifiserer svar (regelbasert,
+ingen AI-nøkkel) og handler automatisk:
+
+- «STOPP»/avmelding → legges på suppression-lista (skjer alltid, også i tørr).
+- «ikke interessert» → suppress + steg `lost`.
+- interessert → steg `meeting_booked` og bookinglenke sendes (`--live`).
+- autosvar/ukjent → ingen handling.
+
+Krever IMAP i `.env` (`IMAP_HOST=imap.gmail.com`, `IMAP_PORT=993`, samme
+app-passord som SMTP) og `BOOKING_URL` (f.eks. en gratis Cal.com-lenke).
+
 ## Status
 
-Fase 1–4 er bygget og kjører mot ekte data (sourcing, enrichment, utkast,
-SMTP-sending med sikkerhetssperrer, samt en gratis scheduler).
-
-Gjenstår (Fase 5 – Convert): lese innboksen (IMAP) for svar, klassifisere dem
-(interessert / ikke / «STOPP»), legge avmeldte på suppression-lista automatisk,
-sende bookinglenke og oppdatere CRM-steget.
+Hele pipelinen (Fase 1–5) er bygget og kjører mot ekte data: sourcing,
+enrichment, utkast, SMTP-sending, svarhåndtering/booking — med sikkerhets-
+sperrer og en gratis scheduler. `npm start` kjører alt.

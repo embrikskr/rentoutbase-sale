@@ -12,6 +12,7 @@ export interface Pitch {
   subject: string;
   body: string;
   unsubscribeText: string;
+  bookingReply: { subject: string; body: string };
 }
 
 export function loadPitch(): Pitch {
@@ -61,5 +62,26 @@ export function renderMessage(
     fromEmail: pitch.from.email,
     subject: fill(pitch.subject, vars),
     body: `${fill(pitch.body, vars)}\n${footerLines.join("\n")}`,
+  };
+}
+
+/** Bygger svaret med bookinglenke som sendes når noen viser interesse. */
+export function renderBookingReply(
+  company: Company,
+  contact: Contact,
+  pitch: Pitch,
+  env: Env,
+): RenderedMessage {
+  const vars = {
+    companyName: company.name,
+    city: company.postalCity ?? company.municipality ?? "ditt område",
+    bookingUrl: env.bookingUrl ?? "[Sett BOOKING_URL i .env]",
+  };
+  return {
+    to: contact.email!,
+    fromName: pitch.from.name,
+    fromEmail: pitch.from.email,
+    subject: fill(pitch.bookingReply.subject, vars),
+    body: fill(pitch.bookingReply.body, vars),
   };
 }

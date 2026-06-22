@@ -2,6 +2,7 @@ import { loadIcp } from "./config.js";
 import { draft } from "./pipeline/draft.js";
 import { enrich } from "./pipeline/enrich.js";
 import { ingest } from "./pipeline/ingest.js";
+import { processReplies } from "./pipeline/replies.js";
 import { send } from "./pipeline/send.js";
 import { JsonStore } from "./store/jsonStore.js";
 import type { LeadStage } from "./types.js";
@@ -59,19 +60,27 @@ async function cmdRun(): Promise<void> {
   console.log(`=== RentOutBase salgsrutine ===`);
   console.log(`ICP: "${icp.name}" · sending: ${live ? "LIVE" : "tørrkjøring"}\n`);
 
-  console.log("1/4 Henter inn leads…");
+  console.log("1/5 Henter inn leads…");
   const ing = await ingest(store, icp);
   console.log(`     +${ing.added} nye, ${ing.qualified} kvalifiserte`);
 
-  console.log("2/4 Beriker (finner e-post)…");
+  console.log("2/5 Beriker (finner e-post)…");
   const enr = await enrich(store);
   console.log(`     ${enr.found} fra nettside, ${enr.guessed} gjettet`);
 
-  console.log("3/4 Lager utkast…");
+  console.log("3/5 Lager utkast…");
   const dr = await draft(store);
   console.log(`     ${dr.drafted} utkast`);
 
-  console.log("4/4 Sender…");
+  console.log("4/5 Behandler svar…");
+  const rep = await processReplies(store, { live });
+  if (rep.notConfigured) console.log("     (IMAP ikke satt opp – hopper over)");
+  else
+    console.log(
+      `     ${rep.unsubscribed} avmeldt, ${rep.interested} interessert, ${rep.bookingSent} bookinglenker`,
+    );
+
+  console.log("5/5 Sender…");
   const sn = await send(store, { live });
   console.log(`     ${live ? "sendt" : "ville sendt"}: ${sn.sent}`);
 
@@ -91,6 +100,24 @@ async function cmdSend(): Promise<void> {
   console.log(`  ${live ? "Sendt" : "Ville sendt"}: ${res.sent}`);
   console.log(`  Hoppet over:  ${res.skipped}`);
   if (res.capReached) console.log(`  (Daglig tak nådd – kjør igjen senere.)`);
+}
+
+async function cmdReplies(): Promise<void> {
+  const store = new JsonStore();
+  const live = hasFlag("live");
+  console.log(live ? "Behandler svar (LIVE)…\n" : "Behandler svar (tørrkjøring)…\n");
+  const res = await processReplies(store, { live });
+  if (res.notConfigured) {
+    console.log("IMAP er ikke satt opp (IMAP_HOST/USER/PASS i .env). Hopper over.");
+    return;
+  }
+  console.log(`Ferdig.`);
+  console.log(`  Hentet:        ${res.fetched}`);
+  console.log(`  Matchet lead:  ${res.matched}`);
+  console.log(`  Avmeldt:       ${res.unsubscribed}`);
+  console.log(`  Ikke interessert: ${res.notInterested}`);
+  console.log(`  Interessert:   ${res.interested}`);
+  console.log(`  Bookinglenker sendt: ${res.bookingSent}`);
 }
 
 async function cmdSuppress(): Promise<void> {
@@ -155,6 +182,9 @@ async function main(): Promise<void> {
     case "send":
       await cmdSend();
       break;
+    case "replies":
+      await cmdReplies();
+      break;
     case "suppress":
       await cmdSuppress();
       break;
@@ -175,6 +205,8 @@ Bruk:
   npm run draft                   Lag personaliserte e-postutkast (steg 3 → data/outbox/)
   npm run send                    Tørrkjøring av utsending (viser hva som ville sendt)
   npm run send -- --live          Send på ekte (krever SMTP i .env)
+  npm run replies                 Les innboks, respekter STOPP, finn interesserte
+  npm run replies -- --live       Samme, og send bookinglenke til interesserte
   npm run cli -- suppress <e-post> [grunn]   Legg til på reservasjonsliste
   npm run list -- --stage enriched --limit 25
   npm run stats                   Antall leads per steg
