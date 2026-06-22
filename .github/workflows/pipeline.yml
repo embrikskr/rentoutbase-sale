@@ -1,0 +1,57 @@
+name: Salgsrutine
+
+# Kjører lead-rutinen gratis på GitHub sine maskiner.
+on:
+  # Hver ukedag kl. 06:00 UTC (08:00 norsk sommertid).
+  schedule:
+    - cron: "0 6 * * 1-5"
+  # Kjør manuelt fra Actions-fanen. Huk av "live" for å faktisk sende.
+  workflow_dispatch:
+    inputs:
+      live:
+        description: "Send på ekte (krever SMTP-secrets)"
+        type: boolean
+        default: false
+
+# Hindrer at to kjøringer overlapper og roter til databasen.
+concurrency:
+  group: salgsrutine
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      # Tar vare på data/ (lead-databasen) mellom kjøringer, slik at vi ikke
+      # kontakter samme bedrift på nytt. Ny cache hver kjøring, gjenoppretter
+      # den nyeste forrige via restore-keys.
+      - name: Gjenopprett database
+        uses: actions/cache@v4
+        with:
+          path: data
+          key: salgsdata-${{ github.run_id }}
+          restore-keys: |
+            salgsdata-
+
+      - run: npm ci
+
+      - name: Kjør rutinen
+        env:
+          SMTP_HOST: ${{ secrets.SMTP_HOST }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASS: ${{ secrets.SMTP_PASS }}
+          COMPANY_POSTAL_ADDRESS: ${{ secrets.COMPANY_POSTAL_ADDRESS }}
+          DAILY_SEND_LIMIT: ${{ vars.DAILY_SEND_LIMIT || '40' }}
+        run: |
+          if [ "${{ inputs.live }}" = "true" ]; then
+            npm start -- --live
+          else
+            npm start
+          fi

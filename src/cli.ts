@@ -51,6 +51,33 @@ async function cmdDraft(): Promise<void> {
   console.log(`  Mappe:        ${res.outDir}`);
 }
 
+async function cmdRun(): Promise<void> {
+  const store = new JsonStore();
+  const icp = loadIcp();
+  const live = hasFlag("live");
+
+  console.log(`=== RentOutBase salgsrutine ===`);
+  console.log(`ICP: "${icp.name}" · sending: ${live ? "LIVE" : "tørrkjøring"}\n`);
+
+  console.log("1/4 Henter inn leads…");
+  const ing = await ingest(store, icp);
+  console.log(`     +${ing.added} nye, ${ing.qualified} kvalifiserte`);
+
+  console.log("2/4 Beriker (finner e-post)…");
+  const enr = await enrich(store);
+  console.log(`     ${enr.found} fra nettside, ${enr.guessed} gjettet`);
+
+  console.log("3/4 Lager utkast…");
+  const dr = await draft(store);
+  console.log(`     ${dr.drafted} utkast`);
+
+  console.log("4/4 Sender…");
+  const sn = await send(store, { live });
+  console.log(`     ${live ? "sendt" : "ville sendt"}: ${sn.sent}`);
+
+  console.log(`\nFerdig. Kjør 'npm run stats' for status.`);
+}
+
 async function cmdSend(): Promise<void> {
   const store = new JsonStore();
   const live = hasFlag("live");
@@ -113,6 +140,9 @@ async function cmdStats(): Promise<void> {
 async function main(): Promise<void> {
   const cmd = process.argv[2];
   switch (cmd) {
+    case "run":
+      await cmdRun();
+      break;
     case "ingest":
       await cmdIngest();
       break;
@@ -138,6 +168,8 @@ async function main(): Promise<void> {
       console.log(`rentoutbase-sale — salgs-pipeline
 
 Bruk:
+  npm start                       Kjør HELE rutinen (ingest→enrich→draft→send, tørr)
+  npm start -- --live             Kjør hele rutinen og send på ekte
   npm run ingest                  Hent inn leads fra Brønnøysund (steg 1–3)
   npm run enrich -- --limit 50    Finn kontakt-e-post for kvalifiserte leads (steg 2)
   npm run draft                   Lag personaliserte e-postutkast (steg 3 → data/outbox/)

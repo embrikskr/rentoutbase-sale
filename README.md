@@ -10,11 +10,18 @@ gjør alt klart for et salg.
 ## Pipeline
 
 ```
-1. SOURCE    Finn bedrifter (Brønnøysund åpne API: bransje/NACE, sted, størrelse)   ✅ bygget
-2. ENRICH    Finn e-post + beslutningstaker (nettside / Hunter / mønster)            ⏳ neste
-3. QUALIFY   Scoring mot ICP, dedupe, sjekk suppression-liste                         ✅ grunnlag
-4. ENGAGE    E-postsekvens m/ personalisering, sendetak, stopp ved svar               ⏳
+1. SOURCE    Finn bedrifter (Brønnøysund åpne API: bransje/NACE, sted, størrelse)   ✅
+2. ENRICH    Finn kontakt-e-post (skrap nettside + gjett rolleadresse)                ✅
+3. DRAFT     Lag personaliserte e-poster m/ lovpålagt avmelding + firmaadresse        ✅
+4. ENGAGE    Send via SMTP, sendetak, suppression, aldri dobbelt                       ✅
 5. CONVERT   Oppdag svar (IMAP) → klassifiser m/ AI → send bookinglenke → CRM         ⏳
+```
+
+Hele rutinen i én kommando:
+
+```bash
+npm start            # ingest → enrich → draft → send (TØRRKJØRING, sender ingenting)
+npm start -- --live  # samme, men sender på ekte (krever SMTP, se nedenfor)
 ```
 
 ## Kom i gang
@@ -30,6 +37,37 @@ npm run ingest              # henter bedrifter fra Brønnøysund
 npm run stats               # antall leads per steg
 npm run list -- --stage qualified --limit 25
 ```
+
+## Slå på ekte sending (gratis)
+
+Tørrkjøring krever ingenting. For å faktisk sende trengs én ting — et gratis
+**Gmail app-passord** (det finnes ingen vei utenom; å sende e-post krever
+innlogging et sted):
+
+1. Slå på 2-trinns på Google-kontoen → lag et **app-passord** (16 tegn).
+2. Fyll ut i `.env`:
+   ```
+   SMTP_HOST=smtp.gmail.com
+   SMTP_PORT=587
+   SMTP_USER=din@gmail.com
+   SMTP_PASS=<app-passordet>
+   COMPANY_POSTAL_ADDRESS=RentOutBase AS, <adresse>
+   ```
+3. `npm start -- --live`
+
+> ⚠️ Å sende kald e-post i volum fra en personlig Gmail kan få kontoen
+> begrenset, og fjerner den manuelle sjekken før noe går ut. Hold deg langt
+> under `DAILY_SEND_LIMIT`, eller bruk et eget sende-domene + SMTP-leverandør.
+
+## Automatisk drift (gratis, kjører av seg selv)
+
+`.github/workflows/pipeline.yml` kjører rutinen på GitHub sine maskiner hver
+ukedag morgen — gratis, uten egen server. Databasen tas vare på mellom
+kjøringer via cache, så samme bedrift kontaktes ikke på nytt.
+
+- **Tørrkjøring** krever ingen oppsett.
+- For **live-sending**: legg SMTP-verdiene inn som *repository secrets*
+  (Settings → Secrets), og start workflowen manuelt med «live» huket av.
 
 ## Konfigurasjon (`config/icp.json`)
 
@@ -68,5 +106,9 @@ i produksjon uten å endre forretningslogikken.
 
 ## Status
 
-Fase 1 (sourcing + lagring + scoring + CLI) er bygget og kjører mot ekte data.
-Fase 2–5 er stubbet i arkitekturen og bygges videre.
+Fase 1–4 er bygget og kjører mot ekte data (sourcing, enrichment, utkast,
+SMTP-sending med sikkerhetssperrer, samt en gratis scheduler).
+
+Gjenstår (Fase 5 – Convert): lese innboksen (IMAP) for svar, klassifisere dem
+(interessert / ikke / «STOPP»), legge avmeldte på suppression-lista automatisk,
+sende bookinglenke og oppdatere CRM-steget.
