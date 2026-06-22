@@ -107,12 +107,30 @@ i produksjon uten å endre forretningslogikken.
 - Avmeldte/reserverte havner på **suppression-lista** og kontaktes aldri igjen.
 - Persondata committes ikke til git (`data/` er ignorert).
 
-## Deliverability
+## Deliverability — unngå søppelpost
 
-- Bruk et **eget sende-domene** (f.eks. `mail.rentoutbase.com`), ikke
-  hoveddomenet — beskytter omdømmet hvis noe går galt.
+Identisk innhold + høyt volum + alt på én gang = rett i søppelpost. Maskinen
+motvirker dette på to måter:
+
+**1. Rolig, spredt tempo (ikke alt på én gang)**
+- Sender kun i sendevinduet `SEND_WINDOW_START`–`SEND_WINDOW_END` (standard 08–15).
+- Maks `SEND_PER_RUN` per kjøring. GitHub Actions kjører rutinen **hver time**
+  i vinduet, så e-postene drypper jevnt utover dagen (5/time → ~35/dag). Sett
+  `SEND_PER_RUN=1` for det aller roligste (1 i timen).
+- `DAILY_SEND_LIMIT` er et hardt dagstak, talt på tvers av alle kjøringer.
+- Tilfeldig pause (30–90 s) mellom hver e-post.
+
+**2. Variert innhold (ingen to like)**
+- `config/pitch.json` støtter **spintax**: `{Hei|Hallo|God dag}` → ett alternativ
+  velges tilfeldig per e-post.
+- `subjects` er en liste emnelinjer; én velges tilfeldig.
+- Sammen med personaliseringen ({{companyName}}, {{city}}) blir hver e-post unik.
+
+**3. Teknisk oppsett (gjør dette uansett)**
+- Bruk et **eget sende-domene** (f.eks. `mail.rentoutbase.com`), ikke hoved-
+  domenet — beskytter omdømmet hvis noe går galt.
 - Sett opp **SPF, DKIM og DMARC** på sende-domenet.
-- Varm opp domenet, og hold deg under `DAILY_SEND_LIMIT`.
+- **Varm opp** domenet gradvis (start lavt, øk volum over uker).
 
 ## Svarhåndtering (Fase 5)
 

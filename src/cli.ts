@@ -84,7 +84,8 @@ async function cmdRun(): Promise<void> {
 
   console.log("5/5 Sender…");
   const sn = await send(store, { live });
-  console.log(`     ${live ? "sendt" : "ville sendt"}: ${sn.sent}`);
+  if (sn.outsideWindow) console.log("     (utenfor sendevinduet – ingenting sendt)");
+  else console.log(`     ${live ? "sendt" : "ville sendt"}: ${sn.sent} (i dag totalt: ${sn.sentToday + sn.sent})`);
 
   console.log(`\nFerdig. Kjør 'npm run stats' for status.`);
 }
@@ -92,16 +93,23 @@ async function cmdRun(): Promise<void> {
 async function cmdSend(): Promise<void> {
   const store = new JsonStore();
   const live = hasFlag("live");
+  const ignoreWindow = hasFlag("now");
   if (!live) {
     console.log("TØRRKJØRING (ingenting sendes). Legg til --live for å sende på ekte.\n");
   } else {
     console.log("⚠️  LIVE-SENDING aktivert.\n");
   }
-  const res = await send(store, { live });
+  const res = await send(store, { live, ignoreWindow });
+  if (res.outsideWindow) {
+    console.log("Utenfor sendevinduet (SEND_WINDOW_START–END). Ingenting sendt.");
+    console.log("Bruk --now for å overstyre vinduet.");
+    return;
+  }
   console.log(`\nFerdig.`);
-  console.log(`  ${live ? "Sendt" : "Ville sendt"}: ${res.sent}`);
-  console.log(`  Hoppet over:  ${res.skipped}`);
-  if (res.capReached) console.log(`  (Daglig tak nådd – kjør igjen senere.)`);
+  console.log(`  ${live ? "Sendt nå" : "Ville sendt"}: ${res.sent}`);
+  console.log(`  Allerede sendt i dag: ${res.sentToday}`);
+  console.log(`  Hoppet over:          ${res.skipped}`);
+  if (res.capReached) console.log(`  (Dagstak nådd – fortsetter i morgen.)`);
 }
 
 async function cmdReplies(): Promise<void> {
@@ -205,8 +213,9 @@ Bruk:
   npm run ingest                  Hent inn leads fra kilden (OSM/Europa) (steg 1–3)
   npm run enrich -- --limit 50    Finn kontakt-e-post for kvalifiserte leads (steg 2)
   npm run draft                   Lag personaliserte e-postutkast (steg 3 → data/outbox/)
-  npm run send                    Tørrkjøring av utsending (viser hva som ville sendt)
-  npm run send -- --live          Send på ekte (krever SMTP i .env)
+  npm run send                    Tørrkjøring (rolig tempo, kun i sendevinduet)
+  npm run send -- --live          Send på ekte (SEND_PER_RUN av gangen, i vinduet)
+  npm run cli -- send --now       Overstyr sendevinduet (for test)
   npm run replies                 Les innboks, respekter STOPP, finn interesserte
   npm run replies -- --live       Samme, og send bookinglenke til interesserte
   npm run cli -- suppress <e-post> [grunn]   Legg til på reservasjonsliste

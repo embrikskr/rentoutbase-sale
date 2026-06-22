@@ -2,9 +2,11 @@ name: Salgsrutine
 
 # Kjører lead-rutinen gratis på GitHub sine maskiner.
 on:
-  # Hver ukedag kl. 06:00 UTC (08:00 norsk sommertid).
+  # Hver time på ukedager kl. 06–13 UTC (≈ 08–15 norsk tid). Hver kjøring
+  # sender en liten bunt (SEND_PER_RUN), så e-postene drypper jevnt utover
+  # dagen i stedet for å gå ut i klynge – mye snillere mot søppelpost-filtre.
   schedule:
-    - cron: "0 6 * * 1-5"
+    - cron: "0 6-13 * * 1-5"
   # Kjør manuelt fra Actions-fanen. Huk av "live" for å faktisk sende.
   workflow_dispatch:
     inputs:
@@ -43,12 +45,21 @@ jobs:
 
       - name: Kjør rutinen
         env:
+          TZ: Europe/Oslo
           SMTP_HOST: ${{ secrets.SMTP_HOST }}
           SMTP_PORT: ${{ secrets.SMTP_PORT }}
           SMTP_USER: ${{ secrets.SMTP_USER }}
           SMTP_PASS: ${{ secrets.SMTP_PASS }}
+          IMAP_HOST: ${{ secrets.IMAP_HOST }}
+          IMAP_PORT: ${{ secrets.IMAP_PORT }}
+          IMAP_USER: ${{ secrets.IMAP_USER }}
+          IMAP_PASS: ${{ secrets.IMAP_PASS }}
+          BOOKING_URL: ${{ secrets.BOOKING_URL }}
           COMPANY_POSTAL_ADDRESS: ${{ secrets.COMPANY_POSTAL_ADDRESS }}
           DAILY_SEND_LIMIT: ${{ vars.DAILY_SEND_LIMIT || '40' }}
+          SEND_PER_RUN: ${{ vars.SEND_PER_RUN || '5' }}
+          SEND_WINDOW_START: ${{ vars.SEND_WINDOW_START || '8' }}
+          SEND_WINDOW_END: ${{ vars.SEND_WINDOW_END || '15' }}
         run: |
           if [ "${{ inputs.live }}" = "true" ]; then
             npm start -- --live

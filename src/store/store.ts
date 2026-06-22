@@ -18,6 +18,8 @@ export interface Store {
   listLeads(stage?: Lead["stage"]): Promise<Lead[]>;
 
   addEvent(e: Event): Promise<void>;
+  /** Antall hendelser av en type med tidspunkt >= sinceIso. */
+  countEvents(type: string, sinceIso: string): Promise<number>;
 
   /** True hvis e-post eller dens domene står på suppression-lista. */
   isSuppressed(emailOrDomain: string): Promise<boolean>;

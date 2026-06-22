@@ -1,11 +1,17 @@
 {
-  "_kommentar": "Rediger denne til ditt faktiske budskap. {{companyName}} og {{city}} fylles inn automatisk per bedrift. Kopier til config/pitch.json.",
+  "_kommentar": "Rediger til ditt budskap. {{companyName}}/{{city}} fylles inn automatisk. {a|b|c} = spintax: ett alternativ velges tilfeldig per e-post, så ingen to mailer blir like. Kopier til config/pitch.json.",
   "from": {
     "name": "Embrik",
     "email": "embrik@rentoutbase.com"
   },
+  "subjects": [
+    "Enklere utleie for {{companyName}}?",
+    "{En idé|Et tips|Et spørsmål} til {{companyName}}",
+    "Mindre administrasjon for {{companyName}}?",
+    "Utleie i {{city}} – {har du 15 min?|en kjapp idé}"
+  ],
   "subject": "Enklere utleie for {{companyName}}?",
-  "body": "Hei,\n\nJeg kom over {{companyName}} og så at dere driver med utleie i {{city}}-området.\n\nVi i RentOutBase hjelper utleiebedrifter med å samle booking, kontrakter og betaling ett sted, slik at mindre tid går til administrasjon. Jeg tror det kan passe godt for dere.\n\nHar du 15 minutter en av de neste dagene til en uforpliktende prat? Så viser jeg hvordan det fungerer.\n\nVennlig hilsen\nEmbrik\nRentOutBase\nrentoutbase.com",
+  "body": "{Hei|Hallo|God dag},\n\n{jeg kom over|jeg la merke til|jeg fant} {{companyName}} og så at dere {driver med|jobber med|tilbyr} utleie i {{city}}-området.\n\nVi i RentOutBase {hjelper|gjør det enklere for} utleiebedrifter {å samle|med å samle} booking, kontrakter og betaling ett sted, slik at {mindre tid går til administrasjon|hverdagen blir mer effektiv}. Jeg tror det {kan passe godt|kan være nyttig} for dere.\n\n{Har du|Skulle du hatt} 15 minutter en av de neste dagene til en {uforpliktende prat|kort prat}? Så viser jeg hvordan det fungerer.\n\n{Vennlig hilsen|Med vennlig hilsen|Beste hilsen}\nEmbrik\nRentOutBase\nrentoutbase.com",
   "unsubscribeText": "Ønsker du ikke flere henvendelser fra oss? Svar «STOPP» på denne e-posten, så fjerner vi deg umiddelbart.",
   "bookingReply": {
     "subject": "Så hyggelig! Velg et tidspunkt",

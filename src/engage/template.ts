@@ -9,7 +9,10 @@ const ROOT = join(__dirname, "..", "..");
 
 export interface Pitch {
   from: { name: string; email: string };
+  /** Fallback-emne. Bruk gjerne `subjects` for variasjon. */
   subject: string;
+  /** Flere emnelinjer – én velges tilfeldig per e-post. Kan inneholde spintax. */
+  subjects?: string[];
   body: string;
   unsubscribeText: string;
   bookingReply: { subject: string; body: string };
@@ -30,13 +33,26 @@ export interface RenderedMessage {
   body: string;
 }
 
-function fill(template: string, vars: Record<string, string>): string {
-  return template.replace(/\{\{(\w+)\}\}/g, (_, key) => vars[key] ?? "");
+const pick = <T>(arr: T[]): T => arr[Math.floor(Math.random() * arr.length)]!;
+
+/** Velger tilfeldig blant spintax-alternativer: "{Hei|Hallo|God dag}". */
+function spin(text: string): string {
+  return text.replace(/\{([^{}|]+(?:\|[^{}|]+)+)\}/g, (_, group: string) =>
+    pick(group.split("|")),
+  );
+}
+
+/** Setter inn variabler ({{token}}) etter at spintax er løst. */
+function render(template: string, vars: Record<string, string>): string {
+  return spin(template).replace(/\{\{(\w+)\}\}/g, (_, key) => vars[key] ?? "");
 }
 
 /**
  * Bygger en personalisert melding for én lead, med lovpålagt avmelding og
  * fysisk firmaadresse i bunnteksten (markedsføringsregler / GDPR).
+ *
+ * Emne og tekst varieres (spintax + valg blant `subjects`) slik at ingen to
+ * e-poster blir helt like – viktig for å unngå søppelpost-filtrene.
  */
 export function renderMessage(
   company: Company,
@@ -56,12 +72,15 @@ export function renderMessage(
     env.companyPostalAddress ?? "[Sett COMPANY_POSTAL_ADDRESS i .env]",
   ];
 
+  const subjectTemplate =
+    pitch.subjects && pitch.subjects.length > 0 ? pick(pitch.subjects) : pitch.subject;
+
   return {
     to: contact.email!,
     fromName: pitch.from.name,
     fromEmail: pitch.from.email,
-    subject: fill(pitch.subject, vars),
-    body: `${fill(pitch.body, vars)}\n${footerLines.join("\n")}`,
+    subject: render(subjectTemplate, vars),
+    body: `${render(pitch.body, vars)}\n${footerLines.join("\n")}`,
   };
 }
 
@@ -81,7 +100,7 @@ export function renderBookingReply(
     to: contact.email!,
     fromName: pitch.from.name,
     fromEmail: pitch.from.email,
-    subject: fill(pitch.bookingReply.subject, vars),
-    body: fill(pitch.bookingReply.body, vars),
+    subject: render(pitch.bookingReply.subject, vars),
+    body: render(pitch.bookingReply.body, vars),
   };
 }

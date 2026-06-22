@@ -46,6 +46,11 @@ export interface Env {
   dailySendLimit: number;
   companyPostalAddress?: string;
   bookingUrl?: string;
+  /** Sending skjer kun i timene [start, slutt) lokal tid. */
+  sendWindowStart: number;
+  sendWindowEnd: number;
+  /** Maks antall e-poster per kjøring (kombinert med hyppig cron = jevnt tempo). */
+  sendPerRun: number;
 }
 
 export function loadEnv(): Env {
@@ -53,6 +58,9 @@ export function loadEnv(): Env {
     dailySendLimit: Number(process.env.DAILY_SEND_LIMIT ?? 40),
     companyPostalAddress: process.env.COMPANY_POSTAL_ADDRESS,
     bookingUrl: process.env.BOOKING_URL,
+    sendWindowStart: Number(process.env.SEND_WINDOW_START ?? 8),
+    sendWindowEnd: Number(process.env.SEND_WINDOW_END ?? 15),
+    sendPerRun: Number(process.env.SEND_PER_RUN ?? 5),
   };
 }
 

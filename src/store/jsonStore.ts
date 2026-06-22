@@ -80,6 +80,10 @@ export class JsonStore implements Store {
     this.flush();
   }
 
+  async countEvents(type: string, sinceIso: string): Promise<number> {
+    return this.db.events.filter((e) => e.type === type && e.at >= sinceIso).length;
+  }
+
   async isSuppressed(emailOrDomain: string): Promise<boolean> {
     const v = emailOrDomain.toLowerCase().trim();
     if (this.db.suppressions[v]) return true;
