@@ -1,4 +1,5 @@
 import { loadIcp } from "./config.js";
+import { draft } from "./pipeline/draft.js";
 import { enrich } from "./pipeline/enrich.js";
 import { ingest } from "./pipeline/ingest.js";
 import { JsonStore } from "./store/jsonStore.js";
@@ -32,6 +33,17 @@ async function cmdEnrich(): Promise<void> {
   console.log(`  E-post fra nettside: ${res.found}`);
   console.log(`  Gjettet rolleadresse: ${res.guessed}`);
   console.log(`  Hoppet over:         ${res.skipped}`);
+}
+
+async function cmdDraft(): Promise<void> {
+  const store = new JsonStore();
+  const limit = Number(arg("limit") ?? 100);
+  console.log(`Lager e-postutkast for berikede leads…\n`);
+  const res = await draft(store, limit);
+  console.log(`Ferdig.`);
+  console.log(`  Utkast laget: ${res.drafted}`);
+  console.log(`  Hoppet over:  ${res.skipped}`);
+  console.log(`  Mappe:        ${res.outDir}`);
 }
 
 async function cmdList(): Promise<void> {
@@ -75,6 +87,9 @@ async function main(): Promise<void> {
     case "enrich":
       await cmdEnrich();
       break;
+    case "draft":
+      await cmdDraft();
+      break;
     case "list":
       await cmdList();
       break;
@@ -87,6 +102,7 @@ async function main(): Promise<void> {
 Bruk:
   npm run ingest                  Hent inn leads fra Brønnøysund (steg 1–3)
   npm run enrich -- --limit 50    Finn kontakt-e-post for kvalifiserte leads (steg 2)
+  npm run draft                   Lag personaliserte e-postutkast (steg 3 → data/outbox/)
   npm run list -- --stage enriched --limit 25
   npm run stats                   Antall leads per steg
 `);

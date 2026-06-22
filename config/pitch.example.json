@@ -1,0 +1,10 @@
+{
+  "_kommentar": "Rediger denne til ditt faktiske budskap. {{companyName}} og {{city}} fylles inn automatisk per bedrift. Kopier til config/pitch.json.",
+  "from": {
+    "name": "Embrik",
+    "email": "embrik@rentoutbase.com"
+  },
+  "subject": "Enklere utleie for {{companyName}}?",
+  "body": "Hei,\n\nJeg kom over {{companyName}} og så at dere driver med utleie i {{city}}-området.\n\nVi i RentOutBase hjelper utleiebedrifter med å samle booking, kontrakter og betaling ett sted, slik at mindre tid går til administrasjon. Jeg tror det kan passe godt for dere.\n\nHar du 15 minutter en av de neste dagene til en uforpliktende prat? Så viser jeg hvordan det fungerer.\n\nVennlig hilsen\nEmbrik\nRentOutBase\nrentoutbase.com",
+  "unsubscribeText": "Ønsker du ikke flere henvendelser fra oss? Svar «STOPP» på denne e-posten, så fjerner vi deg umiddelbart."
+}
